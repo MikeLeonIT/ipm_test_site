@@ -1,59 +1,343 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Demo</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="/static/styles.css">
-    <script src="/static/script.js" defer></script>
-    <title>Web app</title>
-</head>
-<body>
-<h1 class="title">Web App Food store</h1>
-<div class="food-items"></div>
-<div class="cart">
-    <div class="cart-title-wrapper">
-        <div class="title">Your order</div>
-        <button class="cart__further">Submit &#x2192;</button>
-    </div>
-    <div class="cart__total-price">$0.0</div>
-    <div class="cart__items"></div>
-</div>
 
-<template id="food-item">
-    <div class="food-item">
-        <img alt="food" class="food-item__icon">
-        <div class="food-item__info">
-            <div class="food-item__name"></div>
-            <div class="food-item__price"></div>
-        </div>
-        <div class="food-item__buttons">
-            <button class="food-item__button" data-remove>-</button>
-            <button class="food-item__button" data-add>Add</button>
-        </div>
-        <div class="food-item__count"></div>
-    </div>
-</template>
+    <style>
+      * {
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      body {
+        margin: 0;
+        color: var(--tg-theme-text-color);
+        background: var(--tg-theme-bg-color);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+          sans-serif;
+      }
+      button {
+        background-color: var(--tg-theme-bg-color);
+        color: var(--tg-theme-button-color);
+        border: 1px solid var(--tg-theme-button-color);
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        border-radius: 0.5rem;
+        text-transform: uppercase;
+        display: inline-block;
+        height: 32px;
+        width: 96px;
+      }
 
-<template id="cart-item">
-    <div class="cart-item">
-        <div class="cart-item__item">
-            <img alt="food" class="cart-item__icon">
-            <div class="cart-item__info">
-                <div class="cart-item__wrapper">
-                    <div class="cart-item__name"></div>
-                    <div class="cart-item__amount"></div>
+      main {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        grid-template-columns: 1fr 1fr;
+        text-align: center;
+        max-width: 32rem;
+        padding: 2rem 0;
+      }
+      main article {
+        padding: 1rem 1rem 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        position: relative;
+      }
+      main article h4 {
+        font-size: 1rem;
+        margin: 0;
+        flex-grow: 1;
+      }
+      main article h5 {
+        font-weight: normal;
+        color: var(--tg-theme-hint-color);
+        font-size: 0.9rem;
+        margin: 0;
+        flex-grow: 1;
+      }
+      main article h6 {
+        font-weight: normal;
+        color: var(--tg-theme-hint-color);
+        font-size: 0.8rem;
+        margin: 0;
+        flex-grow: 1;
+      }
+      main article img {
+        object-fit: cover;
+        max-width: 100%;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      main article p {
+        font-size: smaller;
+        opacity: 0.5;
+      }
+      main article span {
+        color: var(--tg-theme-text-color, white);
+        font-size: 1.5rem;
+        font-family: monospace;
+        background-color: var(--tg-theme-secondary-bg-color, purple);
+        display: flex;
+        align-items: center;
+        text-align: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        position: absolute;
+        top: 2rem;
+        right: 2rem;
+        border-radius: 0.5rem;
+      }
+      main article div {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+      }
+      main article button.lt,
+      main article button.gt {
+        position: relative;
+        width: 32px;
+      }
+      main article button.lt::before,
+      main article button.gt::before,
+      main article button.gt::after {
+        display: inline-block;
+        position: absolute;
+        content: "";
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        margin: auto;
+        width: 14px;
+        height: 1px;
+        background-color: var(--tg-theme-button-color, purple);
+        border-radius: 1px;
+        z-index: 1;
+      }
+      main article button.gt::after {
+        width: 1px;
+        height: 14px;
+      }
+      
+      /* Стили для категорий */
+
+      header {
+        position: fixed;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        max-width: 90%;
+        z-index: 9999;
+      }
+      nav {
+        width: 100%;
+        overflow-x: auto;
+        white-space: nowrap;
+        padding: 1rem 1rem 2rem;
+        background-color: var(--tg-theme-bg-color);
+        border-bottom: 0.5px solid var(--tg-theme-hint-color);
+      }
+      nav ul {
+        justify-content: space-around;
+        list-style: none;
+        padding-bottom: 0;
+        margin: 0;
+        padding-left: 0px;
+      }
+      nav ul li {
+        display: inline-block;
+        margin-right: 10px;
+      }
+      nav ul li a {
+        display: inline-block;
+        padding: 10px 20px;
+        color: var(--tg-theme-text-color);
+        text-decoration: none;
+        border: 1px solid var(--tg-theme-button-color);
+        border-radius: 20px;
+        transition: color 0.3s ease, background-color 0.3s ease;
+      }
+      @media (hover: hover) and (any-hover: hover) {
+        nav ul li a:hover {
+          color: var(--tg-theme-bg-color);
+          background-color: var(--tg-theme-button-color);
+        }
+      }
+      section {
+        width: 100%;
+      }
+      section div {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import {
+        html,
+        render,
+        useEffect,
+        useState,
+      } from "https://unpkg.com/htm/preact/standalone.module.js";
+
+      const tg = window.Telegram.WebApp;
+
+      console.debug(tg);
+      tg.expand();
+
+      function App() {
+        // menu содержит список позиций для отрисовки
+        const [menu, setMenu] = useState([]);
+
+        // cart содержит список и количество выбранных позиций
+        const [cart, setCart] = useState({});
+
+        const categories = [...new Set(menu.map((item) => item.category))];
+
+        // updCart обновляет количество выбранных позиций по идентификатору
+        const updCart = (id, value) => {
+          const next = cart[id] + value;
+          if (next < 0 || next >= 10) {
+            return;
+          }
+          setCart((prev) => ({ ...prev, [id]: next }));
+        };
+
+        useEffect(() => {
+          /**
+           * Запрашивает данные с сервера
+           *
+           * Полученные данные надо превратить в массив объектов menu
+           * [{
+           *  id: "Идентификатор",
+           *  title: "Название",
+           *  image: "Ссылка на изображение",
+           *  price: "Стоимость",
+           *  details: "Дополнительное описание",
+           *  category: "Категория"
+           * }, ...]
+           */
+          fetch("https://intgr.twin24.io:1758/get_data")
+            .then((r) => r.json())
+            .then((menu) => {
+              // сохраним полученное меню для отрисовки
+              setMenu(menu);
+
+              // Соберём пустую корзину вида { [id]: 0, ... }
+              const cart = menu.reduce(
+                (acc, item) => ((acc[item.id] = 0), acc),
+                {}
+              );
+              // сохраним полученную корзину для отрисовки
+              setCart(cart);
+            });
+        }, []);
+
+        const calculateTotalPrice = () => {
+          return menu.reduce((total, item) => {
+            return total + item.price * (cart[item.id] || 0);
+          }, 0);
+        };
+
+        useEffect(() => {
+          // Мы можем управлять параметрами внешнего вида, видимостью и текстом
+          // "Главной кнопки"
+          tg.MainButton.setParams({ text: "Оформить" });
+        }, []);
+
+        useEffect(() => {
+          const totalPrice = calculateTotalPrice();
+
+          // Выводим в текст кнопки общую стоимость товаров
+          if (totalPrice > 0) {
+            tg.MainButton.setParams({ text: `Оформить (${totalPrice})` });
+            tg.MainButton.show();
+          } else {
+            tg.MainButton.hide();
+          }
+
+          //По нажатию на кнопку возвращаем данные корзины в бота
+          const mainButtonClicked = () => {
+            console.debug(cart);
+            tg.sendData(JSON.stringify(cart));
+            tg.close();
+          };
+
+          Telegram.WebApp.onEvent("mainButtonClicked", mainButtonClicked);
+          return () => {
+            Telegram.WebApp.offEvent("mainButtonClicked", mainButtonClicked);
+          };
+        }, [cart]);
+
+        return html`
+          <header>
+            <nav>
+              <ul>
+                ${categories.map(
+                  (category) =>
+                    html`<li><a href="#${category}">${category}</a></li>`
+                )}
+              </ul>
+            </nav>
+          </header>
+          <main>
+            ${categories.map(
+              (category) => html` <section>
+                <div style="padding-top: 5rem" id="${category}"></div>
+                <h2 style="text-align: center;">${category}</h2>
+                <div>
+                  ${menu
+                    .filter((item) => item.category === category)
+                    .map(
+                      (item) => html`<article>
+                        <img src="${item.image}" />
+                        <h4>${item.title}</h4>
+                        <h5><b>Цена:</b> ${item.price}</h5>
+                        <h6><b>Описание:</b> ${item.details}</h6>
+                        ${cart[item.id] !== 0 &&
+                        html` <span>${cart[item.id]}</span>`}
+                        <div>
+                          ${cart[item.id] === 0 &&
+                          html`<button onClick=${() => updCart(item.id, +1)}>
+                            Добавить
+                          </button>`}
+                          ${cart[item.id] > 0 &&
+                          html`<button
+                              onClick=${() => updCart(item.id, -1)}
+                              class="lt"
+                            ></button>
+                            <button
+                              onClick=${() => updCart(item.id, +1)}
+                              class="gt"
+                            ></button>`}
+                        </div>
+                      </article>`
+                    )}
                 </div>
-                <div class="cart-item__buttons">
-                    <button class="cart-item__button" data-remove>-</button>
-                    <button class="cart-item__button" data-add>+</button>
-                </div>
-            </div>
-        </div>
-        <div class="cart-item__price"></div>
-    </div>
-</template>
-</body>
+              </section>`
+            )}
+          </main>
+        `;
+      }
+      render(html`<${App} />`, document.body);
+    </script>
+  </body>
 </html>
