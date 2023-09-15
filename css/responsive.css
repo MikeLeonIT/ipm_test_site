@@ -215,6 +215,7 @@
 		position: absolute;
 		right: 0;
 		top: 50%;
+		background-color: rgba(250,250,250,0.9);
 		-webkit-transform: translateY(-50%);
 		transform: translateY(-50%);
 		display:block;
@@ -234,6 +235,9 @@
 	}
 	.navbar-nav {
 		margin: 0;
+	}
+	.collapse:not(.show) {
+		display:none;
 	}
 	.navigation-menu > li {
 		display: block;
@@ -416,6 +420,9 @@
 	}
 }
 @media only screen and (max-width: 320px) {
+	.gallery-overlay p {
+		display: none;
+	}
 	.testimonial-content:before {
 		left: 43%;
 	}
